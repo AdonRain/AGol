@@ -1,0 +1,123 @@
+<svg id='container' version='1.1' baseProfile='full' width='600' height='600' xmlns='http://www.w3.org/2000/svg'>
+<title>cellular automata</title>
+<defs>
+<style type='text/css'><![CDATA[
+.dead{stroke: #fff; fill: #eee}
+.live{stroke: #fff; fill: #000}
+]]></style>
+</defs>
+<script type='text/javascript'><![CDATA[
+// 主逻辑
+var g = 1;
+var eles = init(3600);
+var autoRun = true;
+
+document.onkeydown = function (e){
+  if(e.keyCode === 13){
+    nextStage(eles);
+    console.log(g++);
+  }
+}
+
+if(autoRun){
+  setInterval(function (){
+    nextStage(eles);
+    console.log(g++);
+  }, 1000);
+}
+
+// 全局的下一步状态
+function nextStage(eles){
+  var status = eles.map(function (ele, i){
+    return nextState(i, eles);
+  });
+
+  eles.forEach(function (ele, i){
+    ele.setAttribute('class', status[i] === 0 ? 'dead' : 'live')
+  });
+}
+
+// 获取单个元素下一步的状态
+function nextState(i, eles){
+  var neighbors = getArounds(i, eles);
+  var curState = isAlive(eles[i]);
+  var aliveNeighbors = neighbors.filter(function (neighbor){
+    return isAlive(neighbor) === 1;
+  });
+
+  function isAlive(ele){
+    var curState = ele.getAttribute('class');
+    return curState === 'dead' ? 0 : 1;
+  }
+
+  var len = aliveNeighbors.length;
+
+  if(len === 3){
+    return 1;
+  }else if(len === 2){
+    return curState;
+  }else{
+    return 0;
+  }
+}
+
+// 获取坐标点周围元素
+function getArounds(i, eles){
+  var len = Math.sqrt(eles.length);
+  var coord = i2c(i, len);
+  var neighbors = [];
+
+  for(var j=-1; j<2; j++){
+    for(var k=-1; k<2; k++){
+      if(j===0 && k===0) continue;
+
+      var x = coord[0]/10 + j;
+      var y = coord[1]/10 + k;
+
+      if(x>-1 && x<len && y>-1 && y<len){
+        neighbors.push([x, y]);
+      }
+    }
+  }
+
+  return neighbors.map(function (neighbor){
+    return eles[c2i(neighbor, len)];
+  });
+}
+
+// 初始化
+function init(len){
+  var oContainer = document.querySelector('#container');
+  var oFragment = document.createDocumentFragment();
+  var sqrt = Math.sqrt(len);
+  var eles = [];
+
+  for(var i=0; i<len; i++){
+    var coord = i2c(i, sqrt);
+
+    eles[i] = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    eles[i].setAttribute('class', Math.random() > 0.5 ? 'dead' : 'live');
+    eles[i].setAttribute('width', '10');
+    eles[i].setAttribute('height', '10');
+    eles[i].setAttribute('x', coord[0]);
+    eles[i].setAttribute('y', coord[1]);
+
+    oFragment.appendChild(eles[i]);
+  }
+
+  oContainer.appendChild(oFragment);
+
+  return eles;
+}
+
+// 坐标转换
+function i2c(i, len){
+  return [i%len*10, Math.floor(i/len)*10];
+}
+
+function c2i(coord, len){
+  return coord[1]*len + coord[0];
+}
+
+]]></script>
+</svg>
